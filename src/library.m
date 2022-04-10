@@ -14,14 +14,42 @@
     };
 
 IMP OldFunc;
+IMP OldFunc_delegates;
 
 NSNumber* enableCF;
 NSNumber* portCF;
 NSString* targetCF;
 
 NSURLSession* getConfiguredSession(id self, SEL _cmd, NSURLSessionConfiguration* config) {
-	NSLog(@"Hooked sessionWithConfiguration!\n");
-	CFMutableDictionaryRef mutableDict = CFDictionaryCreateMutable(kCFAllocatorDefault, 12, NULL, NULL);
+	NSLog(@"Hooked sessionWithConfiguration:!\n");
+	//CFMutableDictionaryRef mutableDict = CFDictionaryCreateMutable(kCFAllocatorDefault, 12, NULL, NULL);
+
+	/*CFDictionarySetValue(mutableDict, kCFNetworkProxiesHTTPEnable, enableCF);
+	CFDictionarySetValue(mutableDict, kCFNetworkProxiesHTTPPort, portCF);
+	CFDictionarySetValue(mutableDict, kCFNetworkProxiesHTTPProxy, targetCF);
+	CFDictionarySetValue(mutableDict, kSCPropNetProxiesHTTPEnable, enableCF);
+	CFDictionarySetValue(mutableDict, kSCPropNetProxiesHTTPPort, portCF);
+	CFDictionarySetValue(mutableDict, kSCPropNetProxiesHTTPProxy, targetCF);
+
+	CFDictionarySetValue(mutableDict, kCFNetworkProxiesHTTPSEnable, enableCF);
+	CFDictionarySetValue(mutableDict, kCFNetworkProxiesHTTPSPort, portCF);
+	CFDictionarySetValue(mutableDict, kCFNetworkProxiesHTTPSProxy, targetCF);
+	CFDictionarySetValue(mutableDict, kSCPropNetProxiesHTTPSEnable, enableCF);
+	CFDictionarySetValue(mutableDict, kSCPropNetProxiesHTTPSPort, portCF);
+	CFDictionarySetValue(mutableDict, kSCPropNetProxiesHTTPSProxy, targetCF);*/
+	NSDictionary* mutableDict = @{
+		@"HTTPEnable" : @YES,
+		@"HTTPProxy" : @"localhost",
+		@"HTTPPort" : @22500
+	};
+	NSLog(@"%@", (NSDictionary *)mutableDict);
+	config.connectionProxyDictionary = (NSDictionary*) mutableDict;
+	return OldFunc(self, _cmd, config);
+}
+
+NSURLSession* getConfiguredSession_delegates(id self, SEL _cmd, NSURLSessionConfiguration* config, id<NSURLSessionDelegate> delegate, NSOperationQueue* queue) {
+	NSLog(@"Hooked sessionWithConfiguration:delegate:delegateQueue:!\n");
+	/*CFMutableDictionaryRef mutableDict = CFDictionaryCreateMutable(kCFAllocatorDefault, 12, NULL, NULL);
 
 	CFDictionarySetValue(mutableDict, kCFNetworkProxiesHTTPEnable, enableCF);
 	CFDictionarySetValue(mutableDict, kCFNetworkProxiesHTTPPort, portCF);
@@ -35,10 +63,15 @@ NSURLSession* getConfiguredSession(id self, SEL _cmd, NSURLSessionConfiguration*
 	CFDictionarySetValue(mutableDict, kCFNetworkProxiesHTTPSProxy, targetCF);
 	CFDictionarySetValue(mutableDict, kSCPropNetProxiesHTTPSEnable, enableCF);
 	CFDictionarySetValue(mutableDict, kSCPropNetProxiesHTTPSPort, portCF);
-	CFDictionarySetValue(mutableDict, kSCPropNetProxiesHTTPSProxy, targetCF);
+	CFDictionarySetValue(mutableDict, kSCPropNetProxiesHTTPSProxy, targetCF);*/
+	NSDictionary* mutableDict = @{
+		@"HTTPEnable" : @YES,
+		@"HTTPProxy" : @"localhost",
+		@"HTTPPort" : @22500
+	};
 	NSLog(@"%@", (NSDictionary *)mutableDict);
 	config.connectionProxyDictionary = (NSDictionary*) mutableDict;
-	return OldFunc(self, _cmd, config);
+	return OldFunc_delegates(self, _cmd, config, delegate, queue);
 }
 
 CFDictionaryRef proxyhook(SCDynamicStoreRef store) {
@@ -147,6 +180,7 @@ const void * dictValueGetter(CFDictionaryRef theDict, const void *key) {
 __attribute__((constructor))
 static void init() {
 	OldFunc = method_setImplementation(class_getClassMethod([NSURLSession class], @selector(sessionWithConfiguration:)), (IMP)getConfiguredSession);
+	OldFunc_delegates = method_setImplementation(class_getClassMethod([NSURLSession class], @selector(sessionWithConfiguration:delegate:delegateQueue:)), (IMP)getConfiguredSession_delegates);
 
 	enableCF = @1;
 	portCF = @22500;
