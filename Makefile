@@ -1,24 +1,43 @@
 CC = clang
-CFLAGS = -gdwarf
+CFLAGS =
+CFLAGS_DEBUG = -gdwarf -DDEBUG=1
 LDFLAGS = -framework Foundation -framework CFNetwork
 DYLIB_LDFLAGS = -dynamiclib -framework Foundation -framework CFNetwork -framework SystemConfiguration
 
-all: bin/caller bin/library.dylib
+.PHONY: release debug clean test testclean debugtest debugtestclean
 
-bin/caller: src/caller.m
+release: bin/test bin/FlashpointProxyMac.dylib
+
+debug: dbg/test dbg/FlashpointProxyMac.dylib
+
+bin/test: src/Test.m
 	mkdir -p bin
-	$(CC) $(CFLAGS) $(LDFLAGS) -o bin/caller src/caller.m
+	$(CC) $(CFLAGS) $(LDFLAGS) -o bin/test src/Test.m
 
-bin/library.dylib: src/library.m
+bin/FlashpointProxyMac.dylib: src/FlashpointProxyMac.m
 	mkdir -p bin
-	$(CC) $(CFLAGS) $(DYLIB_LDFLAGS) -o bin/library.dylib src/library.m
+	$(CC) $(CFLAGS) $(DYLIB_LDFLAGS) -o bin/FlashpointProxyMac.dylib src/FlashpointProxyMac.m
 
-run: all
-	DYLD_INSERT_LIBRARIES=./bin/library.dylib ./bin/caller
+dbg/test: src/Test.m
+	mkdir -p bin
+	$(CC) $(CFLAGS_DEBUG) $(LDFLAGS) -o dbg/test src/Test.m
 
-runclean: all
-	./bin/caller
+dbg/FlashpointProxyMac.dylib: src/FlashpointProxyMac.m
+	mkdir -p bin
+	$(CC) $(CFLAGS_DEBUG) $(DYLIB_LDFLAGS) -o dbg/FlashpointProxyMac.dylib src/FlashpointProxyMac.m
+
+test: release
+	DYLD_INSERT_LIBRARIES=./bin/FlashpointProxyMac.dylib ./bin/test
+
+testclean: bin/test
+	./bin/test
+
+debugtest: debug
+	DYLD_INSERT_LIBRARIES=./dbg/FlashpointProxyMac.dylib ./dbg/test
+
+debugtestclean: dbg/test
+	./dbg/test
 
 clean:
-	rm -rf bin
-	mkdir -p bin
+	rm -rf bin dbg
+	mkdir -p bin dbg
