@@ -19,11 +19,11 @@ bin/FlashpointProxyMac.dylib: src/FlashpointProxyMac.m
 	$(CC) $(CFLAGS) $(DYLIB_LDFLAGS) -o bin/FlashpointProxyMac.dylib src/FlashpointProxyMac.m
 
 dbg/test: src/Test.m
-	mkdir -p bin
+	mkdir -p dbg
 	$(CC) $(CFLAGS_DEBUG) $(LDFLAGS) -o dbg/test src/Test.m
 
 dbg/FlashpointProxyMac.dylib: src/FlashpointProxyMac.m
-	mkdir -p bin
+	mkdir -p dbg
 	$(CC) $(CFLAGS_DEBUG) $(DYLIB_LDFLAGS) -o dbg/FlashpointProxyMac.dylib src/FlashpointProxyMac.m
 
 test: release
