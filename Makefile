@@ -1,7 +1,7 @@
 CC = clang
-CFLAGS = -gdwarf -fmodules
-LDFLAGS = -framework Foundation
-DYLIB_LDFLAGS = -dynamiclib -framework Foundation
+CFLAGS = -gdwarf
+LDFLAGS = -framework Foundation -framework CFNetwork
+DYLIB_LDFLAGS = -dynamiclib -framework Foundation -framework CFNetwork -framework SystemConfiguration
 
 all: bin/caller bin/library.dylib
 
