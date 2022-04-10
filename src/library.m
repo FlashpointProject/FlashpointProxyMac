@@ -3,6 +3,12 @@
 #include <SystemConfiguration/SystemConfiguration.h>
 #include <objc/runtime.h>
 
+// A compiler flag will define this to be 1 (true) if we want debug messages.
+#ifndef DEBUG
+// If not, it should be 0 (false).
+#define DEBUG 0
+#endif
+
 // A little macro to interpose the functions. I don't know how or why it works.
 #define INTERPOSE(_replacement, _replacee) \
     __attribute__((used)) static struct { \
@@ -13,188 +19,115 @@
 	(const void*) (unsigned long) &_replacee \
     };
 
+
+// The old sessionWithConfiguration: implementation. It will be initialized in init().
 IMP OldFunc;
+// The old sessionWithConfiguration:delegate:delegateQueue implementation. It will be initialized in init().
 IMP OldFunc_delegates;
 
-NSNumber* enableCF;
-NSNumber* portCF;
-NSString* targetCF;
 
+/* This will be the new implementation for sessionWithConfiguration:.
+ * It modifies the proxy dictionary of the config argument, and then calls the old implementation.
+ */
 NSURLSession* getConfiguredSession(id self, SEL _cmd, NSURLSessionConfiguration* config) {
+#if DEBUG
 	NSLog(@"Hooked sessionWithConfiguration:!\n");
-	//CFMutableDictionaryRef mutableDict = CFDictionaryCreateMutable(kCFAllocatorDefault, 12, NULL, NULL);
-
-	/*CFDictionarySetValue(mutableDict, kCFNetworkProxiesHTTPEnable, enableCF);
-	CFDictionarySetValue(mutableDict, kCFNetworkProxiesHTTPPort, portCF);
-	CFDictionarySetValue(mutableDict, kCFNetworkProxiesHTTPProxy, targetCF);
-	CFDictionarySetValue(mutableDict, kSCPropNetProxiesHTTPEnable, enableCF);
-	CFDictionarySetValue(mutableDict, kSCPropNetProxiesHTTPPort, portCF);
-	CFDictionarySetValue(mutableDict, kSCPropNetProxiesHTTPProxy, targetCF);
-
-	CFDictionarySetValue(mutableDict, kCFNetworkProxiesHTTPSEnable, enableCF);
-	CFDictionarySetValue(mutableDict, kCFNetworkProxiesHTTPSPort, portCF);
-	CFDictionarySetValue(mutableDict, kCFNetworkProxiesHTTPSProxy, targetCF);
-	CFDictionarySetValue(mutableDict, kSCPropNetProxiesHTTPSEnable, enableCF);
-	CFDictionarySetValue(mutableDict, kSCPropNetProxiesHTTPSPort, portCF);
-	CFDictionarySetValue(mutableDict, kSCPropNetProxiesHTTPSProxy, targetCF);*/
-	NSDictionary* mutableDict = @{
-		@"HTTPEnable" : @YES,
-		@"HTTPProxy" : @"localhost",
-		@"HTTPPort" : @22500
+#endif
+	// The new proxy dictionary. This is an Objective-C dictionary literal.
+	// The keys are CFStringRef's, so we have to cast them (yay toll-free bridging!) to NSString*'s.
+	// Previously, I was using Objective-C literals for the values, but that was causing double-free segfaults.
+	// Apparently Objective-C literals aren't guaranteed to result in unique pointers? Ridiculous.
+	NSDictionary* proxyDict = @{
+		(NSString *)kCFNetworkProxiesHTTPEnable  : [NSNumber numberWithBool:1],
+		(NSString *)kCFNetworkProxiesHTTPProxy   : [NSString stringWithUTF8String:"localhost"],
+		(NSString *)kCFNetworkProxiesHTTPPort    : [NSNumber numberWithInt:22500],
+		(NSString *)kCFNetworkProxiesHTTPSEnable : [NSNumber numberWithBool:1],
+		(NSString *)kCFNetworkProxiesHTTPSProxy  : [NSString stringWithUTF8String:"localhost"],
+		(NSString *)kCFNetworkProxiesHTTPSPort   : [NSNumber numberWithInt:22500],
+		(NSString *)kCFNetworkProxiesFTPEnable   : [NSNumber numberWithBool:1],
+		(NSString *)kCFNetworkProxiesFTPProxy    : [NSString stringWithUTF8String:"localhost"],
+		(NSString *)kCFNetworkProxiesFTPPort     : [NSNumber numberWithInt:22500]
 	};
-	NSLog(@"%@", (NSDictionary *)mutableDict);
-	config.connectionProxyDictionary = (NSDictionary*) mutableDict;
+#if DEBUG
+	NSLog(@"%@", proxyDict);
+#endif
+	// Set the config's proxy dictionary to our custom one.
+	config.connectionProxyDictionary = proxyDict;
 	return OldFunc(self, _cmd, config);
 }
 
+
+/* Same idea as the previous function. Not gonna bother commenting this one, it's the same.
+ */
 NSURLSession* getConfiguredSession_delegates(id self, SEL _cmd, NSURLSessionConfiguration* config, id<NSURLSessionDelegate> delegate, NSOperationQueue* queue) {
+#if DEBUG
 	NSLog(@"Hooked sessionWithConfiguration:delegate:delegateQueue:!\n");
-	/*CFMutableDictionaryRef mutableDict = CFDictionaryCreateMutable(kCFAllocatorDefault, 12, NULL, NULL);
+#endif
 
-	CFDictionarySetValue(mutableDict, kCFNetworkProxiesHTTPEnable, enableCF);
-	CFDictionarySetValue(mutableDict, kCFNetworkProxiesHTTPPort, portCF);
-	CFDictionarySetValue(mutableDict, kCFNetworkProxiesHTTPProxy, targetCF);
-	CFDictionarySetValue(mutableDict, kSCPropNetProxiesHTTPEnable, enableCF);
-	CFDictionarySetValue(mutableDict, kSCPropNetProxiesHTTPPort, portCF);
-	CFDictionarySetValue(mutableDict, kSCPropNetProxiesHTTPProxy, targetCF);
-
-	CFDictionarySetValue(mutableDict, kCFNetworkProxiesHTTPSEnable, enableCF);
-	CFDictionarySetValue(mutableDict, kCFNetworkProxiesHTTPSPort, portCF);
-	CFDictionarySetValue(mutableDict, kCFNetworkProxiesHTTPSProxy, targetCF);
-	CFDictionarySetValue(mutableDict, kSCPropNetProxiesHTTPSEnable, enableCF);
-	CFDictionarySetValue(mutableDict, kSCPropNetProxiesHTTPSPort, portCF);
-	CFDictionarySetValue(mutableDict, kSCPropNetProxiesHTTPSProxy, targetCF);*/
-	NSDictionary* mutableDict = @{
-		@"HTTPEnable" : @YES,
-		@"HTTPProxy" : @"localhost",
-		@"HTTPPort" : @22500
+	NSDictionary* proxyDict = @{
+		(NSString *)kCFNetworkProxiesHTTPEnable  : [NSNumber numberWithBool:1],
+		(NSString *)kCFNetworkProxiesHTTPProxy   : [NSString stringWithUTF8String:"localhost"],
+		(NSString *)kCFNetworkProxiesHTTPPort    : [NSNumber numberWithInt:22500],
+		(NSString *)kCFNetworkProxiesHTTPSEnable : [NSNumber numberWithBool:1],
+		(NSString *)kCFNetworkProxiesHTTPSProxy  : [NSString stringWithUTF8String:"localhost"],
+		(NSString *)kCFNetworkProxiesHTTPSPort   : [NSNumber numberWithInt:22500],
+		(NSString *)kCFNetworkProxiesFTPEnable   : [NSNumber numberWithBool:1],
+		(NSString *)kCFNetworkProxiesFTPProxy    : [NSString stringWithUTF8String:"localhost"],
+		(NSString *)kCFNetworkProxiesFTPPort     : [NSNumber numberWithInt:22500]
 	};
-	NSLog(@"%@", (NSDictionary *)mutableDict);
-	config.connectionProxyDictionary = (NSDictionary*) mutableDict;
+
+#if DEBUG
+	NSLog(@"%@", proxyDict);
+#endif
+
+	config.connectionProxyDictionary = proxyDict;
 	return OldFunc_delegates(self, _cmd, config, delegate, queue);
 }
 
+
+/* This will be called instead of SCDynamicStoreCopyProxies, which is supposed to return a copy of the system proxies dictionary.
+ * Clearly, we're faking it here, to force the application through our proxy. Same ideas as earlier apply.
+ */
 CFDictionaryRef proxyhook(SCDynamicStoreRef store) {
+#if DEBUG
 	NSLog(@"Hooked SCDynamicStoreCopyProxies!\n");
-	CFMutableDictionaryRef mutableDict = CFDictionaryCreateMutable(kCFAllocatorDefault, 12, NULL, NULL);
+#endif
 
-	CFDictionarySetValue(mutableDict, kCFNetworkProxiesHTTPEnable, enableCF);
-	CFDictionarySetValue(mutableDict, kCFNetworkProxiesHTTPPort, portCF);
-	CFDictionarySetValue(mutableDict, kCFNetworkProxiesHTTPProxy, targetCF);
-	CFDictionarySetValue(mutableDict, kSCPropNetProxiesHTTPEnable, enableCF);
-	CFDictionarySetValue(mutableDict, kSCPropNetProxiesHTTPPort, portCF);
-	CFDictionarySetValue(mutableDict, kSCPropNetProxiesHTTPProxy, targetCF);
+	// Yet another dictionary literal, this time with keys that could someday be different, but probably won't be.
+	NSDictionary* proxyDict = @{
+		(NSString *)kSCPropNetProxiesHTTPEnable  : [NSNumber numberWithBool:1],
+		(NSString *)kSCPropNetProxiesHTTPProxy   : [NSString stringWithUTF8String:"localhost"],
+		(NSString *)kSCPropNetProxiesHTTPPort    : [NSNumber numberWithInt:22500],
+		(NSString *)kSCPropNetProxiesHTTPSEnable : [NSNumber numberWithBool:1],
+		(NSString *)kSCPropNetProxiesHTTPSProxy  : [NSString stringWithUTF8String:"localhost"],
+		(NSString *)kSCPropNetProxiesHTTPSPort   : [NSNumber numberWithInt:22500],
+		(NSString *)kSCPropNetProxiesFTPEnable   : [NSNumber numberWithBool:1],
+		(NSString *)kSCPropNetProxiesFTPProxy    : [NSString stringWithUTF8String:"localhost"],
+		(NSString *)kSCPropNetProxiesFTPPort     : [NSNumber numberWithInt:22500]
+	};
 
-	CFDictionarySetValue(mutableDict, kCFNetworkProxiesHTTPSEnable, enableCF);
-	CFDictionarySetValue(mutableDict, kCFNetworkProxiesHTTPSPort, portCF);
-	CFDictionarySetValue(mutableDict, kCFNetworkProxiesHTTPSProxy, targetCF);
-	CFDictionarySetValue(mutableDict, kSCPropNetProxiesHTTPSEnable, enableCF);
-	CFDictionarySetValue(mutableDict, kSCPropNetProxiesHTTPSPort, portCF);
-	CFDictionarySetValue(mutableDict, kSCPropNetProxiesHTTPSProxy, targetCF);
-	return (CFDictionaryRef) mutableDict;
+#if DEBUG
+	NSLog(@"%@", proxyDict);
+#endif
+
+	return (CFDictionaryRef) proxyDict;
 }
 
-const void * dictValueGetter(CFDictionaryRef theDict, const void *key) {
-	if (key == kSCPropNetProxiesHTTPEnable) {
-		CFShow(key);
-		CFShow(enableCF);
-		return (const void *)enableCF;
-	}
-	if (key == kSCPropNetProxiesHTTPPort) {
-		CFShow(key);
-		CFShow(portCF);
-		return (const void *)portCF;
-	}
-	if (key == kSCPropNetProxiesHTTPProxy) {
-		CFShow(key);
-		CFShow(targetCF);
-		return (const void *)targetCF;
-	}
-	if (key == kSCPropNetProxiesHTTPSEnable) {
-		CFShow(key);
-		CFShow(enableCF);
-		return (const void *)enableCF;
-	}
-	if (key == kSCPropNetProxiesHTTPSPort) {
-		CFShow(key);
-		CFShow(targetCF);
-		return (const void *)portCF;
-	}
-	if (key == kSCPropNetProxiesHTTPSProxy) {
-		CFShow(key);
-		CFShow(targetCF);
-		return (const void *)targetCF;
-	}
-	if (key == kCFNetworkProxiesHTTPEnable) {
-		CFShow(key);
-		CFShow(enableCF);
-		return (const void *)enableCF;
-	}
-	if (key == kCFNetworkProxiesHTTPPort) {
-		CFShow(key);
-		CFShow(portCF);
-		return (const void *)portCF;
-	}
-	if (key == kCFNetworkProxiesHTTPProxy) {
-		CFShow(key);
-		CFShow(targetCF);
-		return (const void *)targetCF;
-	}
-	if (key == kCFNetworkProxiesHTTPSEnable) {
-		CFShow(key);
-		CFShow(enableCF);
-		return (const void *)enableCF;
-	}
-	if (key == kCFNetworkProxiesHTTPSPort) {
-		CFShow(key);
-		CFShow(targetCF);
-		return (const void *)portCF;
-	}
-	if (key == kCFNetworkProxiesHTTPSProxy) {
-		CFShow(key);
-		CFShow(targetCF);
-		return (const void *)targetCF;
-	}
-	if (key == kCFHTTPVersion1_0
-	|| key == kCFStreamPropertyHTTPAttemptPersistentConnection
-	|| key == kCFStreamPropertyHTTPFinalURL
-	|| key == kCFStreamPropertyHTTPProxy
-	|| key == kCFStreamPropertyHTTPRequestBytesWrittenCount
-	|| key == kCFStreamPropertyHTTPResponseHeader
-	|| key == kCFStreamPropertyHTTPShouldAutoredirect
-	|| key == kSCEntNetIPv4
-	|| key == kSCEntNetIPv6
-	|| key == kSCPropNetIPv4Addresses
-	|| key == kCFStreamPropertySOCKSProxyHost
-	|| key == kCFStreamPropertySOCKSProxyPort) {
-		CFShow(key);
-		const void* retval = CFDictionaryGetValue(theDict, key);
-		if (retval != NULL) {
-			CFShow(retval);
-		}
-		return retval;
-	}
-	return CFDictionaryGetValue(theDict, key);
-}
 
 __attribute__((constructor))
 static void init() {
-	OldFunc = method_setImplementation(class_getClassMethod([NSURLSession class], @selector(sessionWithConfiguration:)), (IMP)getConfiguredSession);
-	OldFunc_delegates = method_setImplementation(class_getClassMethod([NSURLSession class], @selector(sessionWithConfiguration:delegate:delegateQueue:)), (IMP)getConfiguredSession_delegates);
+	// The Objective-C runtime allows us to change which implementation is used for a method.
+	// We select the "sessionWithConfiguration:" method on the NSURLSession class, and tell the runtime to use 
+	// getConfiguredSession() as the implementation for that method. It returns the old implementation, which
+	// we store in OldFunc so that it can be called by getConfiguredSession.
+	OldFunc = method_setImplementation(class_getClassMethod(NSURLSession.class, @selector(sessionWithConfiguration:)), (IMP)getConfiguredSession);
+	// Ditto, but with the delegate version.
+	OldFunc_delegates = method_setImplementation(class_getClassMethod(NSURLSession.class, @selector(sessionWithConfiguration:delegate:delegateQueue:)), (IMP)getConfiguredSession_delegates);
 
-	enableCF = @1;
-	portCF = @22500;
-	targetCF = @"127.0.0.1";
-
-	NSLog(@"Loaded!\n");
+#if DEBUG
+	NSLog(@"FlashpointProxyMac Loaded!\n");
+#endif
 }
 
-__attribute__((destructor))
-static void destroy() {
-	CFRelease(enableCF);
-	CFRelease(portCF);
-	CFRelease(targetCF);
-}
-
+// Use the lovely interposing macro to hook 
 INTERPOSE(proxyhook,SCDynamicStoreCopyProxies);
-INTERPOSE(dictValueGetter,CFDictionaryGetValue);
