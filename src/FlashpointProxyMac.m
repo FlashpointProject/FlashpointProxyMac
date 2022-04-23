@@ -67,16 +67,16 @@ NSURLSession* getConfiguredSession_delegates(id self, SEL _cmd, NSURLSessionConf
 #endif
 
 	NSDictionary* proxyDict = [[NSDictionary alloc] initWithObjectsAndKeys:
-                [NSNumber numberWithBool:1],                  (NSString *)kCFNetworkProxiesHTTPEnable,
-                [NSString stringWithUTF8String:"localhost"],  (NSString *)kCFNetworkProxiesHTTPProxy,
-                [NSNumber numberWithInt:22500],               (NSString *)kCFNetworkProxiesHTTPPort,
-                [NSNumber numberWithBool:1],                  (NSString *)kCFNetworkProxiesHTTPSEnable,
-                [NSString stringWithUTF8String:"localhost"],  (NSString *)kCFNetworkProxiesHTTPSProxy,
-                [NSNumber numberWithInt:22500],               (NSString *)kCFNetworkProxiesHTTPSPort,
-                [NSNumber numberWithBool:1],                  (NSString *)kCFNetworkProxiesFTPEnable,
-                [NSString stringWithUTF8String:"localhost"],  (NSString *)kCFNetworkProxiesFTPProxy,
-                [NSNumber numberWithInt:22500],               (NSString *)kCFNetworkProxiesFTPPort,
-                nil
+		[NSNumber numberWithBool:1],                  (NSString *)kCFNetworkProxiesHTTPEnable,
+		[NSString stringWithUTF8String:"localhost"],  (NSString *)kCFNetworkProxiesHTTPProxy,
+		[NSNumber numberWithInt:22500],               (NSString *)kCFNetworkProxiesHTTPPort,
+		[NSNumber numberWithBool:1],                  (NSString *)kCFNetworkProxiesHTTPSEnable,
+		[NSString stringWithUTF8String:"localhost"],  (NSString *)kCFNetworkProxiesHTTPSProxy,
+		[NSNumber numberWithInt:22500],               (NSString *)kCFNetworkProxiesHTTPSPort,
+		[NSNumber numberWithBool:1],                  (NSString *)kCFNetworkProxiesFTPEnable,
+		[NSString stringWithUTF8String:"localhost"],  (NSString *)kCFNetworkProxiesFTPProxy,
+		[NSNumber numberWithInt:22500],               (NSString *)kCFNetworkProxiesFTPPort,
+nil
         ];
 
 #if DEBUG
