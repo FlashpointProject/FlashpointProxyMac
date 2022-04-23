@@ -33,21 +33,23 @@ NSURLSession* getConfiguredSession(id self, SEL _cmd, NSURLSessionConfiguration*
 #if DEBUG
 	NSLog(@"Hooked sessionWithConfiguration:!\n");
 #endif
-	// The new proxy dictionary. This is an Objective-C dictionary literal.
+	// The new proxy dictionary. It uses the initWithObjectsAndKeys: method to initialize the dict.
+	// For some reason, this method's signature is (enjoy my fake regex) "(value, key)+, nil".
 	// The keys are CFStringRef's, so we have to cast them (yay toll-free bridging!) to NSString*'s.
 	// Previously, I was using Objective-C literals for the values, but that was causing double-free segfaults.
 	// Apparently Objective-C literals aren't guaranteed to result in unique pointers? Ridiculous.
-	NSDictionary* proxyDict = @{
-		(NSString *)kCFNetworkProxiesHTTPEnable  : [NSNumber numberWithBool:1],
-		(NSString *)kCFNetworkProxiesHTTPProxy   : [NSString stringWithUTF8String:"localhost"],
-		(NSString *)kCFNetworkProxiesHTTPPort    : [NSNumber numberWithInt:22500],
-		(NSString *)kCFNetworkProxiesHTTPSEnable : [NSNumber numberWithBool:1],
-		(NSString *)kCFNetworkProxiesHTTPSProxy  : [NSString stringWithUTF8String:"localhost"],
-		(NSString *)kCFNetworkProxiesHTTPSPort   : [NSNumber numberWithInt:22500],
-		(NSString *)kCFNetworkProxiesFTPEnable   : [NSNumber numberWithBool:1],
-		(NSString *)kCFNetworkProxiesFTPProxy    : [NSString stringWithUTF8String:"localhost"],
-		(NSString *)kCFNetworkProxiesFTPPort     : [NSNumber numberWithInt:22500]
-	};
+	NSDictionary* proxyDict = [[NSDictionary alloc] initWithObjectsAndKeys:
+		[NSNumber numberWithBool:1],                  (NSString *)kCFNetworkProxiesHTTPEnable,
+		[NSString stringWithUTF8String:"localhost"],  (NSString *)kCFNetworkProxiesHTTPProxy,
+		[NSNumber numberWithInt:22500],               (NSString *)kCFNetworkProxiesHTTPPort,
+		[NSNumber numberWithBool:1],                  (NSString *)kCFNetworkProxiesHTTPSEnable,
+		[NSString stringWithUTF8String:"localhost"],  (NSString *)kCFNetworkProxiesHTTPSProxy,
+		[NSNumber numberWithInt:22500],               (NSString *)kCFNetworkProxiesHTTPSPort,
+		[NSNumber numberWithBool:1],                  (NSString *)kCFNetworkProxiesFTPEnable,
+		[NSString stringWithUTF8String:"localhost"],  (NSString *)kCFNetworkProxiesFTPProxy,
+		[NSNumber numberWithInt:22500],               (NSString *)kCFNetworkProxiesFTPPort,
+		nil
+	];
 #if DEBUG
 	NSLog(@"%@", proxyDict);
 #endif
@@ -64,17 +66,18 @@ NSURLSession* getConfiguredSession_delegates(id self, SEL _cmd, NSURLSessionConf
 	NSLog(@"Hooked sessionWithConfiguration:delegate:delegateQueue:!\n");
 #endif
 
-	NSDictionary* proxyDict = @{
-		(NSString *)kCFNetworkProxiesHTTPEnable  : [NSNumber numberWithBool:1],
-		(NSString *)kCFNetworkProxiesHTTPProxy   : [NSString stringWithUTF8String:"localhost"],
-		(NSString *)kCFNetworkProxiesHTTPPort    : [NSNumber numberWithInt:22500],
-		(NSString *)kCFNetworkProxiesHTTPSEnable : [NSNumber numberWithBool:1],
-		(NSString *)kCFNetworkProxiesHTTPSProxy  : [NSString stringWithUTF8String:"localhost"],
-		(NSString *)kCFNetworkProxiesHTTPSPort   : [NSNumber numberWithInt:22500],
-		(NSString *)kCFNetworkProxiesFTPEnable   : [NSNumber numberWithBool:1],
-		(NSString *)kCFNetworkProxiesFTPProxy    : [NSString stringWithUTF8String:"localhost"],
-		(NSString *)kCFNetworkProxiesFTPPort     : [NSNumber numberWithInt:22500]
-	};
+	NSDictionary* proxyDict = [[NSDictionary alloc] initWithObjectsAndKeys:
+                [NSNumber numberWithBool:1],                  (NSString *)kCFNetworkProxiesHTTPEnable,
+                [NSString stringWithUTF8String:"localhost"],  (NSString *)kCFNetworkProxiesHTTPProxy,
+                [NSNumber numberWithInt:22500],               (NSString *)kCFNetworkProxiesHTTPPort,
+                [NSNumber numberWithBool:1],                  (NSString *)kCFNetworkProxiesHTTPSEnable,
+                [NSString stringWithUTF8String:"localhost"],  (NSString *)kCFNetworkProxiesHTTPSProxy,
+                [NSNumber numberWithInt:22500],               (NSString *)kCFNetworkProxiesHTTPSPort,
+                [NSNumber numberWithBool:1],                  (NSString *)kCFNetworkProxiesFTPEnable,
+                [NSString stringWithUTF8String:"localhost"],  (NSString *)kCFNetworkProxiesFTPProxy,
+                [NSNumber numberWithInt:22500],               (NSString *)kCFNetworkProxiesFTPPort,
+                nil
+        ];
 
 #if DEBUG
 	NSLog(@"%@", proxyDict);
@@ -94,17 +97,18 @@ CFDictionaryRef proxyhook(SCDynamicStoreRef store) {
 #endif
 
 	// Yet another dictionary literal, this time with keys that could someday be different, but probably won't be.
-	NSDictionary* proxyDict = @{
-		(NSString *)kSCPropNetProxiesHTTPEnable  : [NSNumber numberWithBool:1],
-		(NSString *)kSCPropNetProxiesHTTPProxy   : [NSString stringWithUTF8String:"localhost"],
-		(NSString *)kSCPropNetProxiesHTTPPort    : [NSNumber numberWithInt:22500],
-		(NSString *)kSCPropNetProxiesHTTPSEnable : [NSNumber numberWithBool:1],
-		(NSString *)kSCPropNetProxiesHTTPSProxy  : [NSString stringWithUTF8String:"localhost"],
-		(NSString *)kSCPropNetProxiesHTTPSPort   : [NSNumber numberWithInt:22500],
-		(NSString *)kSCPropNetProxiesFTPEnable   : [NSNumber numberWithBool:1],
-		(NSString *)kSCPropNetProxiesFTPProxy    : [NSString stringWithUTF8String:"localhost"],
-		(NSString *)kSCPropNetProxiesFTPPort     : [NSNumber numberWithInt:22500]
-	};
+	NSDictionary* proxyDict = [[NSDictionary alloc] initWithObjectsAndKeys:
+		[NSNumber numberWithBool:1],                  (NSString *)kSCPropNetProxiesHTTPEnable,
+		[NSString stringWithUTF8String:"localhost"],  (NSString *)kSCPropNetProxiesHTTPProxy,
+		[NSNumber numberWithInt:22500],               (NSString *)kSCPropNetProxiesHTTPPort,
+		[NSNumber numberWithBool:1],                  (NSString *)kSCPropNetProxiesHTTPSEnable,
+		[NSString stringWithUTF8String:"localhost"],  (NSString *)kSCPropNetProxiesHTTPSProxy,
+		[NSNumber numberWithInt:22500],               (NSString *)kSCPropNetProxiesHTTPSPort,
+		[NSNumber numberWithBool:1],                  (NSString *)kSCPropNetProxiesFTPEnable,
+		[NSString stringWithUTF8String:"localhost"],  (NSString *)kSCPropNetProxiesFTPProxy,
+		[NSNumber numberWithInt:22500],               (NSString *)kSCPropNetProxiesFTPPort,
+		nil
+	];
 
 #if DEBUG
 	NSLog(@"%@", proxyDict);
